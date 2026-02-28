@@ -1,14 +1,15 @@
-from pandas import DataFrame
+from pandas import DataFrame as pd
 
 class Handler:
     def __init__(self):
         self.dbPathOrUrl: str = ""
 
     def getDbPathOrUrl(self) -> str:
-        pass
+        return self.dbPathOrUrl
 
     def setDbPathOrUrl(self, pathOrUrl: str) -> bool:
-        pass
+        self.dbPathOrUrl = pathOrUrl
+        return True
 
 class UploadHandler(Handler):
     def pushDataToDb(self, path: str) -> bool:

@@ -22,7 +22,7 @@ be.pushDataToDb("data/dh_metadata.json")
 
 # Then, create the graph database (remember first to run the
 # Blazegraph instance) using the related source data
-grp_endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+grp_endpoint = "http://127.0.0.1:9999/bigdata/namespace/kb/sparql"
 cit = CitationUploadHandler()
 cit.setDbPathOrUrl(grp_endpoint)
 cit.pushDataToDb("data/dh_citations.csv")
