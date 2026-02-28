@@ -2,13 +2,13 @@
 # are contained in the file 'impl.py', then:
 
 # 1) Importing all the classes for handling the relational database
-from impl import BibliographicEntityUploadHandler, BibliographicEntityQueryHandler
-
+from src.query.bibliographic_query_handler import BibliographicEntityQueryHandler
+from src.upload.bibliographic_upload_handler import BibliographicEntityUploadHandler
 # 2) Importing all the classes for handling graph database
-from impl import CitationUploadHandler, CitationQueryHandler
-
+from src.upload.citation_upload_handler import CitationUploadHandler
+from src.query.citation_query_handler import CitationQueryHandler
 # 3) Importing the class for dealing with mashup queries
-from impl import FullQueryEngine
+from src.engine.full_query_engine import FullQueryEngine
 
 # Once all the classes are imported, first create the relational
 # database using the related source data
