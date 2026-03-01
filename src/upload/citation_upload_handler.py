@@ -44,8 +44,9 @@ class CitationUploadHandler(UploadHandler):
             if not response.ok:
                 print(f"Failed, status: {response.status_code}, reason: {response.text}")
                 return False
-
-            return True
+            if response.ok:
+                print("Citations pushed to Graph database")
+                return True
         except Exception as e:
             print(f"Error: {e}")
             return False
