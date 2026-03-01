@@ -9,6 +9,8 @@ from src.upload.citation_upload_handler import CitationUploadHandler
 from src.query.citation_query_handler import CitationQueryHandler
 # 3) Importing the class for dealing with mashup queries
 from src.engine.full_query_engine import FullQueryEngine
+# 4) Importing config file
+from config import grp_endpoint
 
 # Once all the classes are imported, first create the relational
 # database using the related source data
@@ -22,7 +24,6 @@ be.pushDataToDb("data/dh_metadata.json")
 
 # Then, create the graph database (remember first to run the
 # Blazegraph instance) using the related source data
-grp_endpoint = "http://127.0.0.1:9999/bigdata/namespace/kb/sparql"
 cit = CitationUploadHandler()
 cit.setDbPathOrUrl(grp_endpoint)
 cit.pushDataToDb("data/dh_citations.csv")

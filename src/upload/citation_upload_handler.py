@@ -40,12 +40,11 @@ class CitationUploadHandler(UploadHandler):
                 data={"update": sparql},
                 headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
-
             if not response.ok:
                 print(f"Failed, status: {response.status_code}, reason: {response.text}")
                 return False
             if response.ok:
-                print("Citations pushed to Graph database")
+                print(f"Status: {response.status_code}, Citations pushed to Graph database")
                 return True
         except Exception as e:
             print(f"Error: {e}")
