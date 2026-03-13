@@ -3,4 +3,4 @@ class IdentifiableEntity:
         self.id: list[str] = []
 
     def getIds(self) -> list[str]:
-        pass
+        return self.id

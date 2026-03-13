@@ -1,4 +1,4 @@
-from pandas import DataFrame as pd
+from pandas import DataFrame
 
 class Handler:
     def __init__(self):
