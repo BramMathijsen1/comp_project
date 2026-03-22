@@ -10,13 +10,13 @@ class BibliographicEntity(IdentifiableEntity):
         self.venue: str = ""
 
     def getTitle(self) -> str:
-        pass
+        return self.title
 
     def getAuthors(self) -> list[str]:
-        pass
+        return self.author
 
     def getPublicationDate(self) -> str:
-        pass
+        return self.publication_date
 
     def getVenue(self) -> str:
-        pass
+        return self.venue
