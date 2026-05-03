@@ -58,47 +58,50 @@
 # df = handler.getAllBibliographicEntities()
 # print(df.head())
 
+# ✅ 1. 所有 import 放最上面
+from src.upload.bibliographic_upload_handler import BibliographicEntityUploadHandler
 from src.query.bibliographic_query_handler import BibliographicEntityQueryHandler
 
-
-def test_bibliographic_queries():
-    handler = BibliographicEntityQueryHandler()
-    handler.setDbPathOrUrl("relational.db")
-
-    print("===== TEST getById (by omid) =====")
-    df = handler.getById("omid:br/060142")
-    print(df)
-    print()
-
-    print("===== TEST getAllBibliographicEntities =====")
-    df = handler.getAllBibliographicEntities()
-    print(df.head())
-    print("shape:", df.shape)
-    print()
-
-    print("===== TEST getBibliographicEntitiesWithTitle =====")
-    df = handler.getBibliographicEntitiesWithTitle("digital")
-    print(df.head())
-    print(df[["title"]].head())
-    print()
-
-    print("===== TEST getBibliographicEntitiesWithAuthor =====")
-    df = handler.getBibliographicEntitiesWithAuthor("Silvio")
-    print(df.head())
-    print()
-
-    print("===== TEST getBibliographicEntitiesWithinPublicationDate =====")
-    df = handler.getBibliographicEntitiesWithinPublicationDate("2020-01-01", "2024-12-31")
-    print(df.head())
-    print(df[["pub_date"]].head())
-    print()
-
-    print("===== TEST getBibliographicEntitiesWithVenue =====")
-    df = handler.getBibliographicEntitiesWithVenue("journal")
-    print(df.head())
-    print(df[["venue"]].head())
-    print()
+# ✅ 2. 数据库路径
+rel_path = "relational.db"
 
 
-if __name__ == "__main__":
-    test_bibliographic_queries()
+#be = BibliographicEntityUploadHandler()
+#be.setDbPathOrUrl(rel_path)
+#be.pushDataToDb("data/dh_metadata.json")
+
+# ✅ 4. 测试 query handler
+handler = BibliographicEntityQueryHandler()
+handler.setDbPathOrUrl("relational.db")
+
+print("\n--- All bibliographic entities ---")
+df = handler.getAllBibliographicEntities()
+print(df.head())
+print(df.shape)
+
+print("\n--- Search by title ---")
+df = handler.getBibliographicEntitiesWithTitle("machine")
+print(df.head())
+print(df.shape)
+
+print("\n--- Search by author ---")
+df = handler.getBibliographicEntitiesWithAuthor("Rovira")
+print(df.head())
+print(df.shape)
+
+print("\n--- Search by publication date ---")
+df = handler.getBibliographicEntitiesWithinPublicationDate("2018", "2020")
+print(df.head())
+print(df.shape)
+
+print("\n--- Search by venue ---")
+df = handler.getBibliographicEntitiesWithVenue("journal")
+print(df.head())
+print(df.shape)
+
+print("\n--- Search by ID ---")
+all_df = handler.getAllBibliographicEntities()
+first_id = all_df["omid"].iloc[0]
+df = handler.getById(first_id)
+print(df)
+print(df.shape)
