@@ -1,4 +1,4 @@
-from src.models.citation import Citation
+from impl.Citation import Citation
 
 
 class AuthorSelfCitation(Citation):

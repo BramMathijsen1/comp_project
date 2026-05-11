@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from src.base.handler import QueryHandler
+from impl.QueryHandler import QueryHandler
 import pandas as pd
 import requests
 import re 
@@ -74,11 +74,15 @@ class CitationQueryHandler(QueryHandler):
 
     def getAllCitations(self) -> DataFrame:
         query = """
-        SELECT ?citation ?citing ?cited
+        SELECT ?citation ?citing ?cited ?creation ?timespan ?journal_sc ?author_sc
         WHERE {
             ?citation a <http://purl.org/spar/cito/Citation> ;
-            <http://purl.org/spar/cito/hasCitingEntity> ?citing ;
-            <http://purl.org/spar/cito/hasCitedEntity> ?cited .
+                <http://purl.org/spar/cito/hasCitingEntity> ?citing ;
+                <http://purl.org/spar/cito/hasCitedEntity> ?cited .
+            OPTIONAL { ?citation <https://schema.org/dateCreated> ?creation . }
+            OPTIONAL { ?citation <https://schema.org/duration> ?timespan . }
+            OPTIONAL { ?citation <http://opencitations.net/ontology/journal_sc> ?journal_sc . }
+            OPTIONAL { ?citation <http://opencitations.net/ontology/author_sc> ?author_sc . }
         }
         """
 

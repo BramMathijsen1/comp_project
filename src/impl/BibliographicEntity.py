@@ -1,4 +1,4 @@
-from src.models.identifiable_entity import IdentifiableEntity
+from impl.identifiable_entity import IdentifiableEntity
 
 
 class BibliographicEntity(IdentifiableEntity):

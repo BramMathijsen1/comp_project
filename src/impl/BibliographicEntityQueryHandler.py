@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 from pandas import DataFrame
 
-from src.base.handler import QueryHandler
+from impl.QueryHandler import QueryHandler
 
 
 class BibliographicEntityQueryHandler(QueryHandler):

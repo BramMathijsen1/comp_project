@@ -1,8 +1,8 @@
 import json
 import sqlite3
 
-from src.base.handler import UploadHandler
-from src.models.bibliographic_entity import BibliographicEntity
+from impl.UploadHandler import UploadHandler
+from impl.BibliographicEntity import BibliographicEntity
 
 
 class BibliographicEntityUploadHandler(UploadHandler):

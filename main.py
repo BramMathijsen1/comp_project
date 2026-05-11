@@ -59,8 +59,8 @@
 # print(df.head())
 
 # ✅ 1. 所有 import 放最上面
-from src.upload.bibliographic_upload_handler import BibliographicEntityUploadHandler
-from src.query.bibliographic_query_handler import BibliographicEntityQueryHandler
+from impl.BibliographicEntityUploadHandler import BibliographicEntityUploadHandler
+from impl.BibliographicEntityQueryHandler import BibliographicEntityQueryHandler
 
 # ✅ 2. 数据库路径
 rel_path = "relational.db"

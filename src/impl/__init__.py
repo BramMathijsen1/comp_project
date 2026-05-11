@@ -1,0 +1,10 @@
+from impl.BibliographicEntityUploadHandler import BibliographicEntityUploadHandler
+from impl.BibliographicEntityQueryHandler import BibliographicEntityQueryHandler
+from impl.CitationUploadHandler import CitationUploadHandler
+from impl.CitationQueryHandler import CitationQueryHandler
+from impl.FullQueryEngine import FullQueryEngine
+
+from impl.Citation import Citation
+from impl.BibliographicEntity import BibliographicEntity
+from impl.AuthorSelfCitation import AuthorSelfCitation
+from impl.JournalSelfCitation import JournalSelfCitation

@@ -1,5 +1,5 @@
-from src.models.identifiable_entity import IdentifiableEntity
-from src.models.bibliographic_entity import BibliographicEntity
+from impl.identifiable_entity import IdentifiableEntity
+from impl.BibliographicEntity import BibliographicEntity
 
 class Citation(IdentifiableEntity):
     def __init__(self):

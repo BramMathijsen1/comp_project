@@ -1,6 +1,6 @@
 import pandas as pd
 import requests  
-from src.base.handler import UploadHandler
+from impl.UploadHandler import UploadHandler
 
 
 class CitationUploadHandler(UploadHandler):
