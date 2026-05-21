@@ -164,6 +164,20 @@ class CitationQueryHandler(QueryHandler):
         start_ts = pd.to_datetime(start_date)
         end_ts = pd.to_datetime(end_date)
 
+        if len(start_date) == 4:
+            start_ts = pd.to_datetime(start_date + "-01-01")
+        elif len(start_date) == 7:
+            start_ts = pd.to_datetime(start_date + "-01")
+        else:
+            start_ts = pd.to_datetime(start_date)
+
+        if len(end_date) == 4:
+            end_ts = pd.to_datetime(end_date + "-12-31")
+        elif len(end_date) == 7:
+            end_ts = pd.to_datetime(end_date + "-28")
+        else:
+            end_ts = pd.to_datetime(end_date)
+
         df = df[
             (df["creation_normalized"] >= start_ts) &
             (df["creation_normalized"] <= end_ts)
