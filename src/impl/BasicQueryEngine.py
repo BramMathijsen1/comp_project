@@ -48,7 +48,7 @@ class BasicQueryEngine:
         frames = []
         for handler in self.citationQuery:
             try:
-                frames.append(handler.getAllCitations())
+                frames.append(handler.getAllBibliographicEntities())
             except Exception:
                 pass
         return self._concat(frames)
