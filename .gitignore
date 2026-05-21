@@ -5,6 +5,7 @@
 
 #config files
 config.py
+test2.py
 
 # User-specific files
 *.rsuser

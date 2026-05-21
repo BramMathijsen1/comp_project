@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pandas as pd
+
 from impl.identifiable_entity import IdentifiableEntity
 from impl.Citation import Citation
 from impl.AuthorSelfCitation import AuthorSelfCitation
@@ -34,31 +36,32 @@ class BasicQueryEngine:
 
     # ── internal DataFrame helpers ─────────────────────────────────────────
 
-    def _all_citation_df(self):
-        """Concatenate DataFrames from all registered citation handlers."""
-        import pandas as pd
+    def _concat(self, frames: list) -> pd.DataFrame:
+        """Concatenate a list of DataFrames, dropping duplicates."""
+        non_empty = [df for df in frames if df is not None and not df.empty]
+        if not non_empty:
+            return pd.DataFrame()
+        return pd.concat(non_empty, ignore_index=True).drop_duplicates()
+
+    def _all_citation_df(self) -> pd.DataFrame:
+        """Concatenate getAllCitations() from every registered citation handler."""
         frames = []
         for handler in self.citationQuery:
             try:
-                df = handler.getAllCitations()
-                if df is not None and not df.empty:
-                    frames.append(df)
+                frames.append(handler.getAllCitations())
             except Exception:
                 pass
-        return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+        return self._concat(frames)
 
-    def _all_bib_df(self):
-        """Concatenate DataFrames from all registered bib-entity handlers."""
-        import pandas as pd
+    def _all_bib_df(self) -> pd.DataFrame:
+        """Concatenate getAllBibliographicEntities() from every registered bib handler."""
         frames = []
         for handler in self.bibliographicEntityQuery:
             try:
-                df = handler.getAllEntities()
-                if df is not None and not df.empty:
-                    frames.append(df)
+                frames.append(handler.getAllBibliographicEntities())
             except Exception:
                 pass
-        return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+        return self._concat(frames)
 
     def _bib_map(self) -> dict[str, BibliographicEntity]:
         """Return {omid: BibliographicEntity} for fast lookup."""
@@ -74,21 +77,25 @@ class BasicQueryEngine:
         """
         Search both databases for an entity whose identifier list contains
         *id*. Returns the first match as a domain object, or None.
+        Delegates to each handler's getById() method.
         """
-        # Check bibliographic entities first
-        bib_df = self._all_bib_df()
-        if not bib_df.empty:
-            for _, row in bib_df.iterrows():
-                ids = _parse_ids(row)
-                if id in ids or str(row.get("omid", "")) == id:
-                    return _row_to_bib_entity(row)
+        # Check bibliographic entity handlers first
+        for handler in self.bibliographicEntityQuery:
+            try:
+                df = handler.getById(id)
+                if df is not None and not df.empty:
+                    return _row_to_bib_entity(df.iloc[0])
+            except Exception:
+                pass
 
-        # Then check citations
-        cit_df = self._all_citation_df()
-        if not cit_df.empty:
-            for _, row in cit_df.iterrows():
-                if str(row.get("citation", "")) == id:
-                    return _row_to_citation(row)
+        # Then check citation handlers
+        for handler in self.citationQuery:
+            try:
+                df = handler.getById(id)
+                if df is not None and not df.empty:
+                    return _row_to_citation(df.iloc[0])
+            except Exception:
+                pass
 
         return None
 
@@ -98,38 +105,48 @@ class BasicQueryEngine:
         return [_row_to_citation(row) for _, row in self._all_citation_df().iterrows()]
 
     def getAllAuthorSelfCitations(self) -> list[AuthorSelfCitation]:
-        df = self._all_citation_df()
-        if df.empty:
-            return []
-        mask = df["author_sc"].str.strip().str.lower() == "yes"
-        return [_row_to_author_self_citation(row) for _, row in df[mask].iterrows()]
+        """Delegate to each handler's getAllAuthorSelfCitations() and merge."""
+        frames = []
+        for handler in self.citationQuery:
+            try:
+                frames.append(handler.getAllAuthorSelfCitations())
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_author_self_citation(row) for _, row in df.iterrows()]
 
     def getAllJournalSelfCitations(self) -> list[JournalSelfCitation]:
-        df = self._all_citation_df()
-        if df.empty:
-            return []
-        mask = df["journal_sc"].str.strip().str.lower() == "yes"
-        return [_row_to_journal_self_citation(row) for _, row in df[mask].iterrows()]
+        """Delegate to each handler's getAllJournalSelfCitations() and merge."""
+        frames = []
+        for handler in self.citationQuery:
+            try:
+                frames.append(handler.getAllJournalSelfCitations())
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_journal_self_citation(row) for _, row in df.iterrows()]
 
     def getCitationsWithinTimespan(self, min_timespan: str, max_timespan: str) -> list[Citation]:
-        """Return citations whose timespan falls within [min_timespan, max_timespan] (ISO 8601)."""
-        min_y = _parse_timespan(min_timespan)
-        max_y = _parse_timespan(max_timespan)
-        results: list[Citation] = []
-        for _, row in self._all_citation_df().iterrows():
-            ts_y = _parse_timespan(str(row.get("timespan", "")))
-            if ts_y >= 0 and min_y <= ts_y <= max_y:
-                results.append(_row_to_citation(row))
-        return results
+        """Delegate to each handler's getCitationsWithinTimespan() and merge."""
+        frames = []
+        for handler in self.citationQuery:
+            try:
+                frames.append(handler.getCitationsWithinTimespan(min_timespan, max_timespan))
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_citation(row) for _, row in df.iterrows()]
 
     def getCitationsWithinDate(self, start_date: str, end_date: str) -> list[Citation]:
-        """Return citations whose creation date falls within [start_date, end_date]."""
-        results: list[Citation] = []
-        for _, row in self._all_citation_df().iterrows():
-            creation = str(row.get("creation", "")).strip()
-            if creation and start_date <= creation <= end_date:
-                results.append(_row_to_citation(row))
-        return results
+        """Delegate to each handler's getCitationsWithinDate() and merge."""
+        frames = []
+        for handler in self.citationQuery:
+            try:
+                frames.append(handler.getCitationsWithinDate(start_date, end_date))
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_citation(row) for _, row in df.iterrows()]
 
     # ── bibliographic entity queries ───────────────────────────────────────
 
@@ -137,37 +154,48 @@ class BasicQueryEngine:
         return [_row_to_bib_entity(row) for _, row in self._all_bib_df().iterrows()]
 
     def getBibliographicEntitiesWithTitle(self, title: str) -> list[BibliographicEntity]:
-        title_lower = title.strip().lower()
-        return [
-            _row_to_bib_entity(row)
-            for _, row in self._all_bib_df().iterrows()
-            if title_lower in str(row.get("title", "")).lower()
-        ]
+        """Delegate to each handler's getBibliographicEntitiesWithTitle() and merge."""
+        frames = []
+        for handler in self.bibliographicEntityQuery:
+            try:
+                frames.append(handler.getBibliographicEntitiesWithTitle(title))
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_bib_entity(row) for _, row in df.iterrows()]
 
     def getBibliographicEntitiesWithAuthor(self, author: str) -> list[BibliographicEntity]:
-        author_lower = author.strip().lower()
-        results: list[BibliographicEntity] = []
-        for _, row in self._all_bib_df().iterrows():
-            authors = _parse_author_list(row)
-            if any(author_lower in a.lower() for a in authors):
-                results.append(_row_to_bib_entity(row))
-        return results
+        """Delegate to each handler's getBibliographicEntitiesWithAuthor() and merge."""
+        frames = []
+        for handler in self.bibliographicEntityQuery:
+            try:
+                frames.append(handler.getBibliographicEntitiesWithAuthor(author))
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_bib_entity(row) for _, row in df.iterrows()]
 
     def getBibliographicEntitiesWithinDate(self, start_date: str, end_date: str) -> list[BibliographicEntity]:
-        results: list[BibliographicEntity] = []
-        for _, row in self._all_bib_df().iterrows():
-            pub_date = str(row.get("pub_date", "")).strip()
-            if pub_date and start_date <= pub_date <= end_date:
-                results.append(_row_to_bib_entity(row))
-        return results
+        """Delegate to each handler's getBibliographicEntitiesWithinPublicationDate() and merge."""
+        frames = []
+        for handler in self.bibliographicEntityQuery:
+            try:
+                frames.append(handler.getBibliographicEntitiesWithinPublicationDate(start_date, end_date))
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_bib_entity(row) for _, row in df.iterrows()]
 
     def getBibliographicEntitiesWithVenue(self, venue: str) -> list[BibliographicEntity]:
-        venue_lower = venue.strip().lower()
-        return [
-            _row_to_bib_entity(row)
-            for _, row in self._all_bib_df().iterrows()
-            if venue_lower in str(row.get("venue", "")).lower()
-        ]
+        """Delegate to each handler's getBibliographicEntitiesWithVenue() and merge."""
+        frames = []
+        for handler in self.bibliographicEntityQuery:
+            try:
+                frames.append(handler.getBibliographicEntitiesWithVenue(venue))
+            except Exception:
+                pass
+        df = self._concat(frames)
+        return [_row_to_bib_entity(row) for _, row in df.iterrows()]
 
 
 # ──────────────────────────────────────────────────────────────────────────────
