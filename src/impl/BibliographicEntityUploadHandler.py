@@ -115,7 +115,7 @@ class BibliographicEntityUploadHandler(UploadHandler):
                 (omid, id_type, identifier),
             )
 
-    def _extract_omid(self, identifiers: list[str]) -> str | None:
+    def _extract_omid(self, identifiers: list[str]) -> "str | None":
         for identifier in identifiers:
             if identifier.startswith("omid:br/"):
                 return identifier
