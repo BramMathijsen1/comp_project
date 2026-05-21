@@ -36,10 +36,11 @@ class BibliographicEntityQueryHandler(QueryHandler):
    
 
     def getAllBibliographicEntities(self) -> DataFrame:
-
         query = """
-        SELECT DISTINCT *
-        FROM bibliographic_entities
+        SELECT DISTINCT b.*, GROUP_CONCAT(a.author_name, '; ') as author
+        FROM bibliographic_entities b
+        LEFT JOIN entity_authors a ON b.omid = a.omid
+        GROUP BY b.omid
         """
         return self._execute_query(query)
 

@@ -233,13 +233,12 @@ def _parse_ids(row) -> list[str]:
 
 
 def _parse_author_list(row) -> list[str]:
-    """Return the list of author name strings for a bib-entity row."""
     raw = row.get("authors", row.get("author", ""))
     if not raw:
         return []
     if isinstance(raw, list):
         return [str(a) for a in raw]
-    return [s.strip() for s in str(raw).split(",") if s.strip()]
+    return [s.strip() for s in str(raw).split(";") if s.strip()]
 
 
 def _extract_oci(uri: str) -> str:

@@ -20,33 +20,22 @@ class FullQueryEngine(BasicQueryEngine):
     """
 
     def getAuthorSelfCitationsByName(self, author_name: str) -> list[AuthorSelfCitation]:
-        """
-        Return AuthorSelfCitation objects where at least one author matching
-        *author_name* (case-insensitive substring of name or surname) is an
-        author of BOTH the citing and the cited entity.
-        """
         name_lower = author_name.strip().lower()
         bib_map    = self._bib_map()
         results: list[AuthorSelfCitation] = []
-        # Delegate to BasicQueryEngine which delegates to handler
+
+        # First find all OMIDs where the author name matches
+        matching_omids = {
+            omid for omid, be in bib_map.items()
+            if any(name_lower in a.lower() for a in be.getAuthors())
+        }
+
+        # Then filter author self-citations where both citing AND cited are in matching OMIDs
         for asc in self.getAllAuthorSelfCitations():
-            citing_be = bib_map.get(asc.citing) or bib_map.get(
-                "omid:br/" + str(asc.citing).split("/")[-1]
-            )
-            cited_be = bib_map.get(asc.cited) or bib_map.get(
-                "omid:br/" + str(asc.cited).split("/")[-1]
-            )
+            citing_key = asc.citing if asc.citing in bib_map else "omid:br/" + str(asc.citing).split("/")[-1]
+            cited_key  = asc.cited  if asc.cited  in bib_map else "omid:br/" + str(asc.cited).split("/")[-1]
 
-            if citing_be is None or cited_be is None:
-                # Flag is set but entities not in relational DB: include as fallback
-                results.append(asc)
-                continue
-
-            citing_authors = {a.lower() for a in citing_be.getAuthors()}
-            cited_authors  = {a.lower() for a in cited_be.getAuthors()}
-            common         = citing_authors & cited_authors
-
-            if any(name_lower in auth for auth in common):
+            if citing_key in matching_omids and cited_key in matching_omids:
                 results.append(asc)
 
         return results

@@ -100,7 +100,7 @@ class CitationQueryHandler(QueryHandler):
             FILTER(?author_sc = "yes") 
         }
         """
-
+        
         results = self._run_query(query)
         return self._results_to_dataframe(results)
 

@@ -141,7 +141,7 @@ class TestProjectBasic(unittest.TestCase):
         # FullQueryEngine
         # -----
 
-        r = fq.getAuthorSelfCitationsByName("Matt")
+        r = fq.getAuthorSelfCitationsByName("Warwick")
         self.assertIsInstance(r, list)
         for i in r:
             self.assertIsInstance(i, AuthorSelfCitation)
