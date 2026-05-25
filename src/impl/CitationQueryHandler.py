@@ -2,10 +2,10 @@ from pandas import DataFrame
 from impl.QueryHandler import QueryHandler
 import pandas as pd
 import requests
-import re 
+import re
 
 class CitationQueryHandler(QueryHandler):
-    def _run_query(self, query: str) -> dict: 
+    def _run_query(self, query: str) -> dict:
         endpoint = self.getDbPathOrUrl()
 
         response = requests.get(
@@ -17,7 +17,7 @@ class CitationQueryHandler(QueryHandler):
         response.raise_for_status()
         return response.json()
     
-    def _results_to_dataframe(self, results: dict) -> DataFrame: 
+    def _results_to_dataframe(self, results: dict) -> DataFrame:
         rows = []
 
         for item in results["results"]["bindings"]:
@@ -28,11 +28,11 @@ class CitationQueryHandler(QueryHandler):
 
         return pd.DataFrame(rows)
     
-    def _duration_to_days(self, duration:str) -> int: 
+    def _duration_to_days(self, duration:str) -> int:
         pattern = r"P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?" 
         match = re.fullmatch(pattern, duration) 
 
-        if not match:
+        if not match or duration == "P":
             return -1
         
         years = int(match.group(1)) if match.group(1) else 0
@@ -53,6 +53,9 @@ class CitationQueryHandler(QueryHandler):
             creation = creation + "-01"
         return pd.to_datetime(creation, errors="coerce")
     
+    def _validate_date_format(self, date_str: str) -> bool:
+        return bool(re.fullmatch(r'\d{4}|\d{4}-\d{2}|\d{4}-\d{2}-\d{2}', date_str))
+
     def getById(self, id: str) -> DataFrame:
         citation_uri = f"http://opencitations.net/citation/{id}"
 
@@ -130,11 +133,18 @@ class CitationQueryHandler(QueryHandler):
         }
         """
 
-        results = self._run_query(query)
-        df = self._results_to_dataframe(results)
-
         min_days = self._duration_to_days(min_timespan)
         max_days = self._duration_to_days(max_timespan)
+
+        if min_days == -1:
+            raise ValueError("Timespan must be in ISO 8601 format e.g. P1Y, P6M, P2Y6M15D")
+        if max_days == -1:
+            raise ValueError("Timespan must be in ISO 8601 format e.g. P1Y, P6M, P2Y6M15D")
+        if min_days > max_days:
+            raise ValueError("min_timespan must be less than or equal to max_timespan")
+
+        results = self._run_query(query)
+        df = self._results_to_dataframe(results)
 
         df["timespan_days"] = df["timespan"].apply(self._duration_to_days)
 
@@ -143,7 +153,7 @@ class CitationQueryHandler(QueryHandler):
             (df["timespan_days"] <= max_days)
         ]
         
-        return df.drop(columns=["timespan_days"])
+        return df.drop(columns=["timespan_days"]).reset_index(drop=True)
 
     def getCitationsWithinDate(self, start_date: str, end_date: str) -> DataFrame:
         query = """
@@ -155,14 +165,17 @@ class CitationQueryHandler(QueryHandler):
                 <https://schema.org/dateCreated> ?creation .
         }
         """
-
-        results = self._run_query(query)
-        df =  self._results_to_dataframe(results)
-
-        df["creation_normalized"] = df["creation"].apply(self._normalize_creation_date)
         
-        start_ts = pd.to_datetime(start_date)
-        end_ts = pd.to_datetime(end_date)
+        if not self._validate_date_format(start_date):
+            raise ValueError("Date must be in YYYY, YYYY-MM, or YYYY-MM-DD format")
+        if not self._validate_date_format(end_date):
+            raise ValueError("Date must be in YYYY, YYYY-MM, or YYYY-MM-DD format")
+        
+        try:
+            pd.to_datetime(start_date)
+            pd.to_datetime(end_date)
+        except Exception:
+            raise ValueError("Date must be a valid calendar date in YYYY, YYYY-MM, or YYYY-MM-DD format")
 
         if len(start_date) == 4:
             start_ts = pd.to_datetime(start_date + "-01-01")
@@ -174,13 +187,21 @@ class CitationQueryHandler(QueryHandler):
         if len(end_date) == 4:
             end_ts = pd.to_datetime(end_date + "-12-31")
         elif len(end_date) == 7:
-            end_ts = pd.to_datetime(end_date + "-28")
+            end_ts = pd.to_datetime(end_date + "-01") + pd.offsets.MonthEnd(0)
         else:
             end_ts = pd.to_datetime(end_date)
+
+        if start_ts > end_ts:
+            raise ValueError("start_date must be earlier than or equal to end_date")
+       
+        results = self._run_query(query)
+        df = self._results_to_dataframe(results)
+
+        df["creation_normalized"] = df["creation"].apply(self._normalize_creation_date)
 
         df = df[
             (df["creation_normalized"] >= start_ts) &
             (df["creation_normalized"] <= end_ts)
         ]
 
-        return df.drop(columns = ["creation_normalized"]).reset_index(drop=True)
+        return df.drop(columns=["creation_normalized"]).reset_index(drop=True)(drop=True)
